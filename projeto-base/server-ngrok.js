@@ -7,8 +7,8 @@ const app = express();
 const PORT = 3000;
 const OLLAMA_PORT = 11434;
 
-// Array para armazenar perguntas em memória
-let questionsLog = [];
+// Array para armazenar interações (perguntas e respostas) em memória
+let interactionsLog = [];
 
 // Objeto para armazenar sessões de conversa
 let conversations = {};
@@ -127,12 +127,13 @@ function addToSession(sessionId, role, content) {
   return message;
 }
 
-// Função para salvar pergunta com IP
-function saveQuestion(userMessage, clientInfo, sessionId = null, timestamp = new Date()) {
-  const questionEntry = {
+// Função para salvar interação (pergunta e resposta)
+function saveInteraction(userMessage, aiResponse, clientInfo, sessionId = null, timestamp = new Date()) {
+  const interactionEntry = {
     id: Date.now() + Math.random().toString(36).substr(2, 9),
     timestamp: timestamp.toISOString(),
     question: userMessage,
+    response: aiResponse,
     ip: clientInfo.ip,
     sessionId: sessionId,
     userAgent: clientInfo.userAgent,
@@ -143,23 +144,23 @@ function saveQuestion(userMessage, clientInfo, sessionId = null, timestamp = new
   };
   
   // Adicionar ao log em memória
-  questionsLog.unshift(questionEntry);
+  interactionsLog.unshift(interactionEntry);
   
-  // Manter apenas as últimas 2000 perguntas
-  if (questionsLog.length > 2000) {
-    questionsLog = questionsLog.slice(0, 2000);
+  // Manter apenas as últimas 2000 interações
+  if (interactionsLog.length > 2000) {
+    interactionsLog = interactionsLog.slice(0, 2000);
   }
   
   // Salvar em arquivo
   try {
-    const logEntry = `${timestamp.toISOString()} | IP: ${clientInfo.ip} | Sessão: ${sessionId} | PERGUNTA: ${userMessage}\n`;
+    const logEntry = `${timestamp.toISOString()} | IP: ${clientInfo.ip} | Sessão: ${sessionId} | PERGUNTA: ${userMessage} | RESPOSTA: ${aiResponse}\n`;
     fs.appendFileSync('questions_log.txt', logEntry, 'utf8');
   } catch (error) {
     console.error('Erro ao salvar log:', error);
   }
   
-  console.log(`💾 Pergunta salva (sessão: ${sessionId}): ${userMessage.substring(0, 50)}...`);
-  return questionEntry;
+  console.log(`💾 Interação salva (sessão: ${sessionId}): ${userMessage.substring(0, 50)}... -> ${aiResponse.substring(0, 50)}...`);
+  return interactionEntry;
 }
 
 // Rota principal
@@ -178,28 +179,49 @@ app.get('/health', (req, res) => {
     status: 'OK', 
     message: 'Servidor Kojima funcionando',
     timestamp: new Date().toISOString(),
-    totalQuestions: questionsLog.length,
+    totalInteractions: interactionsLog.length,
     totalSessions: Object.keys(conversations).length,
     yourIp: getClientIp(req)
   });
 });
 
-// Rota para obter todas as perguntas
-app.get('/api/questions', (req, res) => {
+// Rota para obter todas as interações (perguntas e respostas)
+app.get('/api/interactions', (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
   const page = parseInt(req.query.page) || 1;
   const startIndex = (page - 1) * limit;
   const endIndex = startIndex + limit;
   
-  const paginatedQuestions = questionsLog.slice(startIndex, endIndex);
+  const paginatedInteractions = interactionsLog.slice(startIndex, endIndex);
   
   res.json({
-    questions: paginatedQuestions,
-    total: questionsLog.length,
+    interactions: paginatedInteractions,
+    total: interactionsLog.length,
     page: page,
-    totalPages: Math.ceil(questionsLog.length / limit),
-    hasNext: endIndex < questionsLog.length,
+    totalPages: Math.ceil(interactionsLog.length / limit),
+    hasNext: endIndex < interactionsLog.length,
     hasPrev: page > 1
+  });
+});
+
+// Rota para buscar interações
+app.get('/api/interactions/search', (req, res) => {
+  const query = req.query.q?.toLowerCase();
+  if (!query) {
+    return res.status(400).json({ error: 'Parâmetro de busca (q) é obrigatório' });
+  }
+  
+  const filteredInteractions = interactionsLog.filter(interaction => 
+    interaction.question.toLowerCase().includes(query) ||
+    interaction.response.toLowerCase().includes(query) ||
+    interaction.ip.toLowerCase().includes(query) ||
+    (interaction.sessionId && interaction.sessionId.toLowerCase().includes(query))
+  );
+  
+  res.json({
+    query: query,
+    results: filteredInteractions,
+    total: filteredInteractions.length
   });
 });
 
@@ -237,31 +259,11 @@ app.get('/api/sessions/:sessionId', (req, res) => {
   res.json(session);
 });
 
-// Rota para buscar perguntas
-app.get('/api/questions/search', (req, res) => {
-  const query = req.query.q?.toLowerCase();
-  if (!query) {
-    return res.status(400).json({ error: 'Parâmetro de busca (q) é obrigatório' });
-  }
-  
-  const filteredQuestions = questionsLog.filter(q => 
-    q.question.toLowerCase().includes(query) ||
-    q.ip.toLowerCase().includes(query) ||
-    (q.sessionId && q.sessionId.toLowerCase().includes(query))
-  );
-  
-  res.json({
-    query: query,
-    results: filteredQuestions,
-    total: filteredQuestions.length
-  });
-});
-
 // Rota para estatísticas
 app.get('/api/stats', (req, res) => {
   const today = new Date().toDateString();
-  const todayQuestions = questionsLog.filter(q => 
-    new Date(q.timestamp).toDateString() === today
+  const todayInteractions = interactionsLog.filter(interaction => 
+    new Date(interaction.timestamp).toDateString() === today
   );
   
   // Análise de sessões ativas hoje
@@ -271,8 +273,8 @@ app.get('/api/stats', (req, res) => {
   
   // Análise de tópicos mais comuns
   const topicCount = {};
-  questionsLog.forEach(q => {
-    const question = q.question.toLowerCase();
+  interactionsLog.forEach(interaction => {
+    const question = interaction.question.toLowerCase();
     if (question.includes('dor')) topicCount.dor = (topicCount.dor || 0) + 1;
     if (question.includes('febre') || question.includes('febre')) topicCount.febre = (topicCount.febre || 0) + 1;
     if (question.includes('gripe')) topicCount.gripe = (topicCount.gripe || 0) + 1;
@@ -288,8 +290,8 @@ app.get('/api/stats', (req, res) => {
   
   // Análise de dispositivos
   const deviceCount = {};
-  questionsLog.forEach(q => {
-    deviceCount[q.device] = (deviceCount[q.device] || 0) + 1;
+  interactionsLog.forEach(interaction => {
+    deviceCount[interaction.device] = (deviceCount[interaction.device] || 0) + 1;
   });
   const topDevices = Object.entries(deviceCount)
     .sort(([,a], [,b]) => b - a)
@@ -298,8 +300,8 @@ app.get('/api/stats', (req, res) => {
   
   // Análise de navegadores
   const browserCount = {};
-  questionsLog.forEach(q => {
-    browserCount[q.browser] = (browserCount[q.browser] || 0) + 1;
+  interactionsLog.forEach(interaction => {
+    browserCount[interaction.browser] = (browserCount[interaction.browser] || 0) + 1;
   });
   const topBrowsers = Object.entries(browserCount)
     .sort(([,a], [,b]) => b - a)
@@ -307,34 +309,34 @@ app.get('/api/stats', (req, res) => {
     .map(([browser, count]) => ({ browser, count }));
   
   // IPs únicos (apenas para estatística)
-  const uniqueIps = [...new Set(questionsLog.map(q => q.ip))].length;
+  const uniqueIps = [...new Set(interactionsLog.map(interaction => interaction.ip))].length;
   
   res.json({
-    totalQuestions: questionsLog.length,
-    todayQuestions: todayQuestions.length,
+    totalInteractions: interactionsLog.length,
+    todayInteractions: todayInteractions.length,
     totalSessions: Object.keys(conversations).length,
     uniqueIps: uniqueIps,
     activeSessionsToday: todaySessions.length,
-    firstQuestion: questionsLog[questionsLog.length - 1]?.timestamp || null,
-    lastQuestion: questionsLog[0]?.timestamp || null,
+    firstInteraction: interactionsLog[interactionsLog.length - 1]?.timestamp || null,
+    lastInteraction: interactionsLog[0]?.timestamp || null,
     topTopics: topTopics,
     topDevices: topDevices,
     topBrowsers: topBrowsers
   });
 });
 
-// Rota para exportar perguntas
-app.get('/api/questions/export', (req, res) => {
+// Rota para exportar interações
+app.get('/api/interactions/export', (req, res) => {
   try {
-    const csvContent = 'Data,Hora,IP,Sessão,Dispositivo,Navegador,Pergunta\n' + questionsLog.map(q => 
-      `"${q.date}","${q.time}","${q.ip}","${q.sessionId || 'N/A'}","${q.device}","${q.browser}","${q.question.replace(/"/g, '""')}"`
+    const csvContent = 'Data,Hora,IP,Sessão,Dispositivo,Navegador,Pergunta,Resposta\n' + interactionsLog.map(interaction => 
+      `"${interaction.date}","${interaction.time}","${interaction.ip}","${interaction.sessionId || 'N/A'}","${interaction.device}","${interaction.browser}","${interaction.question.replace(/"/g, '""')}","${interaction.response.replace(/"/g, '""')}"`
     ).join('\n');
     
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=perguntas_kojima.csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=interacoes_kojima.csv');
     res.send(csvContent);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao exportar perguntas' });
+    res.status(500).json({ error: 'Erro ao exportar interações' });
   }
 });
 
@@ -342,29 +344,30 @@ app.get('/api/questions/export', (req, res) => {
 app.get('/api/ip/:ip', (req, res) => {
   const ip = req.params.ip;
   
-  // Encontrar todas as perguntas deste IP
-  const ipQuestions = questionsLog.filter(q => q.ip === ip)
+  // Encontrar todas as interações deste IP
+  const ipInteractions = interactionsLog.filter(interaction => interaction.ip === ip)
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-    .slice(0, 10); // Últimas 10 perguntas
+    .slice(0, 10); // Últimas 10 interações
   
-  if (ipQuestions.length === 0) {
-    return res.status(404).json({ error: 'Nenhuma pergunta encontrada para este IP' });
+  if (ipInteractions.length === 0) {
+    return res.status(404).json({ error: 'Nenhuma interação encontrada para este IP' });
   }
   
-  const firstSeen = ipQuestions[ipQuestions.length - 1].timestamp;
-  const lastSeen = ipQuestions[0].timestamp;
+  const firstSeen = ipInteractions[ipInteractions.length - 1].timestamp;
+  const lastSeen = ipInteractions[0].timestamp;
   
   res.json({
     ip: ip,
-    totalQuestions: ipQuestions.length,
+    totalInteractions: ipInteractions.length,
     firstSeen: firstSeen,
     lastSeen: lastSeen,
-    device: ipQuestions[0].device,
-    browser: ipQuestions[0].browser,
-    questions: ipQuestions.map(q => ({
-      question: q.question,
-      timestamp: q.timestamp,
-      sessionId: q.sessionId
+    device: ipInteractions[0].device,
+    browser: ipInteractions[0].browser,
+    interactions: ipInteractions.map(interaction => ({
+      question: interaction.question,
+      response: interaction.response,
+      timestamp: interaction.timestamp,
+      sessionId: interaction.sessionId
     }))
   });
 });
@@ -391,9 +394,6 @@ app.post("/api/generate", (req, res) => {
   
   console.log(`🤖 Recebendo pergunta (sessão: ${sessionId}): ${userPrompt?.substring(0, 100)}...`);
   
-  // Salvar apenas a pergunta
-  saveQuestion(userPrompt, clientInfo, sessionId);
-  
   // Obter ou criar sessão APENAS pelo sessionId
   const session = getSession(sessionId);
   
@@ -401,7 +401,7 @@ app.post("/api/generate", (req, res) => {
   addToSession(sessionId, 'user', userPrompt);
   
   // Construir contexto com histórico
-  let context = "Você é o Kojima, um assistente de saúde inteligente. Use o histórico da conversa para responder de forma contextualizada.\n\n";
+  let context = "Você é um assistente de saúde chamado Kojima. Seja útil, preciso e direto em suas respostas sobre saúde. Forneça informações claras e, quando apropriado, recomende consultar um profissional de saúde. Use o histórico da conversa para responder de forma contextualizada, se não houver mensagem anterior, não diga que houve uma pergunta anterior.\n\n";
   
   // Adicionar histórico recente (últimas 5 trocas)
   const recentHistory = session.history.slice(-10); // 5 user + 5 assistant
@@ -447,6 +447,9 @@ app.post("/api/generate", (req, res) => {
         const parsedData = JSON.parse(data);
         console.log("✅ Resposta do Ollama recebida");
 
+        // Salvar interação (pergunta e resposta)
+        saveInteraction(userPrompt, parsedData.response, clientInfo, sessionId);
+
         // Adicionar resposta do assistente à sessão
         addToSession(sessionId, 'assistant', parsedData.response);
 
@@ -479,7 +482,7 @@ app.post("/api/generate", (req, res) => {
 // Limpeza de sessões antigas (mais de 24 horas)
 function cleanupOldSessions() {
   const oneDayAgo = new Date();
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+  oneDayAgo.setDate(oneDayAgo.getDate() - 0);
   
   let removedCount = 0;
   Object.keys(conversations).forEach(sessionId => {
@@ -511,15 +514,15 @@ app.listen(PORT, '0.0.0.0', () => {
 👤 Chatbot: http://localhost:${PORT}
 👨‍💼 Admin: http://localhost:${PORT}/admin
 📊 Estatísticas: http://localhost:${PORT}/api/stats
-📝 Perguntas: http://localhost:${PORT}/api/questions
+📝 Interações: http://localhost:${PORT}/api/interactions
 💬 Sessões: http://localhost:${PORT}/api/sessions
-📤 Exportar: http://localhost:${PORT}/api/questions/export
+📤 Exportar: http://localhost:${PORT}/api/interactions/export
 
 🚀 Para acesso externo, execute:
    ngrok http ${PORT}
 
-💡 AGORA COM MEMÓRIA CONTEXTUAL POR SESSÃO!
-   Cada aba/recarregamento inicia uma nova conversa
+💡 AGORA COM MEMÓRIA CONTEXTUAL E LOG DE INTERAÇÕES COMPLETAS!
+   Cada pergunta e resposta é salva no sistema
 
 ✨ ===================================
   `);

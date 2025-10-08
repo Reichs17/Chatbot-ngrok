@@ -1,14 +1,15 @@
 {
   "name": "kojima-chatbot",
   "version": "1.0.0",
-  "description": "Chatbot de saúde Kojima - Com memória contextual",
+  "description": "Chatbot de saúde Kojima - Com memória contextual e log de interações",
   "main": "server-ngrok.js",
   "scripts": {
     "start": "node server-ngrok.js",
     "ngrok": "ngrok http 3000",
     "dev": "node server-ngrok.js",
     "logs": "tail -f questions_log.txt",
-    "export": "curl http://localhost:3000/api/questions/export > perguntas.csv"
+    "export": "curl http://localhost:3000/api/interactions/export > interacoes_kojima.csv",
+    "backup": "cp questions_log.txt backup_questions_$(date +%Y%m%d_%H%M%S).txt"
   },
   "dependencies": {
     "express": "^5.1.0"
@@ -19,8 +20,9 @@
     "ollama",
     "ngrok",
     "memory",
-    "contextual"
+    "contextual",
+    "logging"
   ],
-  "author": "Kojima Team",
+  "author": "Christopher de Medeiros Henrique",
   "license": "MIT"
 }

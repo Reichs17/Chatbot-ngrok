@@ -14,7 +14,7 @@ function generateSessionId() {
 
 // Adicionar mensagem inicial
 window.addEventListener('DOMContentLoaded', () => {
-    addBotMessage("Olá! Sou o Kojima, seu assistente virtual de saúde. 😊\n\nEstou aqui para ajudar com dúvidas médicas, sintomas e orientações de saúde. Como posso ajudá-lo hoje?\n\n💡 *Cada conversa é independente - recarregue a página para começar uma nova conversa*");
+    addBotMessage("Olá! Sou o Kojima, seu assistente virtual de saúde. 😊\n\nEstou aqui para ajudar com dúvidas médicas, sintomas e orientações de saúde. Como posso ajudá-lo hoje?");
     
     // Mostrar session ID no console para debug
     console.log("Nova sessão iniciada:", currentSessionId);
