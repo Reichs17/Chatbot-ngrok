@@ -143,35 +143,9 @@ kojima-chatbot/
 | **GET**    | `/api/questions/export`             | Exportação CSV                     |
 | **GET**    | `/api/ip/:ip`                       | Informações de um IP específico   |
 
-### Exemplo de Uso da API
-
-```javascript
-// Obter estatísticas
-const response = await fetch('/api/stats');
-const stats = await response.json();
-
-// Enviar pergunta para a IA
-const aiResponse = await fetch('/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        prompt: "Quais são os sintomas de gripe?",
-        sessionId: "session_123456"
-    })
-});
-```
-
 ---
 
 ## 🎯 Como Funciona
-
-### 🧠 Sistema de Memória por Sessão
-
-```
-Nova Aba → Gera SessionID Único → Histórico Isolado → Limpeza em 24h
-     ↓           ↓                   ↓              ↓
-   Usuário    Identificador    Conversa Privada   Manutenção
-```
 
 ### 🔄 Fluxo de Conversação
 1. **Início**: Usuário abre o chatbot → Gera sessionId único
@@ -195,18 +169,6 @@ Nova Aba → Gera SessionID Único → Histórico Isolado → Limpeza em 24h
 - **Exportação**: Dados completos para análise
 
 ---
-
-## 🔧 Configuração Avançada
-
-### Variáveis de Ambiente (Opcional)
-Crie um arquivo .env:
-
-```
-PORT=3000
-OLLAMA_PORT=11434
-SESSION_TIMEOUT=24h
-LOG_RETENTION=2000
-```
 
 ### Personalização do Modelo de IA
 No server-ngrok.js, modifique:
