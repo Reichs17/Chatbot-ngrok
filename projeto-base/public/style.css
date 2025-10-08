@@ -1,0 +1,239 @@
+body {
+    background-color: #1f1f1f; 
+    color: white;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+.header {
+    top: 0;
+    width: 100%;
+    background: #2b2b2b;
+    padding: 10px 0;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    position: sticky;
+    z-index: 100;
+}
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    gap: 10px;
+    padding: 0 20px;
+}
+.header img{
+    height: 50px;
+    border-radius: 5px;
+}
+.chat-container {
+    display:flex;
+    flex-direction: column;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    transition: justify-content 0.8s ease;
+    overflow-y: hidden;
+    padding: 10px;
+    box-sizing: border-box;
+    margin-bottom: 50px;
+}
+.chat-container.active {
+    justify-content: flex-end;
+    padding-bottom: 20px;
+}
+.suggestion-box {
+    background: #222222;
+    border-radius: 300px;
+    padding: 10px;
+    width: 80%;
+    max-width: 580px;
+    margin-bottom: 10px;
+    border: 1px solid #666666;
+    height: 30px;
+    transition: background 0.3s ease;
+}
+.suggestion-box:hover {
+    background: #333333; /* Apenas muda o fundo ao passar o mouse */
+}
+.suggestion-box .suggestions {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    height: 100%;
+    align-items: center;
+    border-radius: 30px;
+}
+.suggestion-box .suggestion-button{
+    background: #6195ff;
+    border: none;
+    border-radius: 20px;
+    color: #000000;
+    cursor: pointer;
+    padding: 8px 12px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+.suggestion-box .suggestion-button:hover{
+    background: #3b6ed3;
+    transform: scale(1.05);
+}
+.suggestion-box .suggestion {
+    flex: 1;
+    padding: 8px 12px;
+    background: #3b3b3b;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.suggestion-box .suggestion:hover {
+    background: #4a4a4a;
+}
+.messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 80%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 10px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    max-height: 70vh;
+}
+.messages::-webkit-scrollbar {
+    display: none; 
+}
+.message {
+    background: #2b2b2b;
+    padding: 12px 15px;
+    border-radius: 20px;
+    animation: fadeIn 1.5s ease forwards;
+    max-width: 80%;
+    word-wrap: break-word;
+    border: 1px solid #444;
+}
+.message.bot {
+    align-self: flex-start;
+    background: #2b2b2b;
+}
+.message.user {
+    align-self: flex-end;
+    background: #3b6ed3;
+    border-color: #2a4da0;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.input-box {
+    background: #2b2b2b;
+    border-radius: 30px;
+    padding: 10px;
+    width: 80%;
+    max-width: 600px;
+    box-shadow: 0 0 10px rgba(180, 205, 255, 0.5); /* Efeito de luz */
+    display: flex;
+    gap: 10px;
+    border: 1px solid #444;
+    transition: box-shadow 0.3s ease;
+}
+.input-box:hover {
+    box-shadow: 0 0 15px rgba(235, 242, 255, 0.8); /* Aumenta o brilho ao passar o mouse */
+}
+.input-box:focus-within {
+    box-shadow: 0 0 20px rgb(255, 255, 255); /* Aumenta o brilho ao focar no input */
+}
+.input-box input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 20px;
+    outline: none;
+    background: #3b3b3b;
+    color: white;
+    font-size: 16px;
+    transition: background 0.3s ease; /* Remove o box-shadow */
+}
+.input-box input:focus {
+    background: #444; /* Apenas muda o fundo ao focar */
+}
+.input-box button {
+    background: #6195ff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-weight: bold;
+}
+.input-box button:hover {
+    background: #233a69;
+}
+.input-box button:active {
+    transform: scale(0.95);
+}
+
+/* Caixa de sugestÃµes flutuante */
+.floating-suggestions {
+    display: none;
+    position: absolute;
+    bottom: 120px;
+    right: 50px;
+    background: #3b3b3b;
+    border-radius: 30px ;
+    padding: 10px;
+    width: 260px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 200;
+    border: 1px solid #555;
+}
+
+.floating-suggestions.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.floating-suggestions .suggestion-item {
+    background: #444;
+    padding: 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-bottom: 6px;
+    text-align: center;
+    transition: background 0.2s;
+    border: 1px solid #555;
+}
+
+.floating-suggestions .suggestion-item:hover {
+    background: #666;
+    transform: translateX(5px);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .messages, .input-box, .suggestion-box {
+        width: 95%;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .header img {
+        height: 40px;
+    }
+    
+    .floating-suggestions {
+        right: 20px;
+        width: calc(100% - 40px);
+    }
+}

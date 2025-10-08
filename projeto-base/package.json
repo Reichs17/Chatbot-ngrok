@@ -1,0 +1,26 @@
+{
+  "name": "kojima-chatbot",
+  "version": "1.0.0",
+  "description": "Chatbot de saúde Kojima - Com memória contextual",
+  "main": "server-ngrok.js",
+  "scripts": {
+    "start": "node server-ngrok.js",
+    "ngrok": "ngrok http 3000",
+    "dev": "node server-ngrok.js",
+    "logs": "tail -f questions_log.txt",
+    "export": "curl http://localhost:3000/api/questions/export > perguntas.csv"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "keywords": [
+    "chatbot",
+    "health",
+    "ollama",
+    "ngrok",
+    "memory",
+    "contextual"
+  ],
+  "author": "Kojima Team",
+  "license": "MIT"
+}
