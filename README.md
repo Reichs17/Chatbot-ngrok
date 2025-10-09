@@ -1,7 +1,6 @@
 # 🤖 Kojima Chatbot - Assistente de Saúde Inteligente
 
 <div align="center">
-  <img src="public/Kojima_Productions_logo.png" alt="Kojima Logo" width="200">
 
   Um assistente virtual de saúde com IA, memória contextual e painel de monitoramento
 
