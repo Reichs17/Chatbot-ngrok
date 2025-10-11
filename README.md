@@ -76,7 +76,7 @@ O **Kojima Chatbot** é um assistente virtual de saúde inteligente que utiliza 
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/kojima-chatbot.git
+   git clone https://github.com/Reichs17/Chatbot-ngrok.git
    cd kojima-chatbot
    ```
 2. Instale as dependências:
