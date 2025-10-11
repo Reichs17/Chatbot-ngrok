@@ -173,7 +173,7 @@ kojima-chatbot/
 No server-ngrok.js, modifique:
 
 ```javascript
-// Linha ~280
+// Linha ~472
 ollamaReq.write(JSON.stringify({
     model: "llama3",  // Altere para seu modelo preferido
     prompt: context,
